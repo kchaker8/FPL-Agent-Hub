@@ -57,6 +57,16 @@ export async function POST(req: NextRequest) {
         position: POSITION_MAP[el.element_type],
         price: parseFloat((el.now_cost / 10).toFixed(1)),
         totalPoints: 0,
+        form: parseFloat(el.form) || 0,
+        selectedByPercent: parseFloat(el.selected_by_percent) || 0,
+        expectedGoals: parseFloat(el.expected_goals) || 0,
+        expectedAssists: parseFloat(el.expected_assists) || 0,
+        ictIndex: parseFloat(el.ict_index) || 0,
+        news: el.news || '',
+        chanceOfPlayingNextRound:
+          el.chance_of_playing_next_round === null
+            ? 100
+            : Number(el.chance_of_playing_next_round),
       }));
 
     // ── Seed the database ────────────────────────────────

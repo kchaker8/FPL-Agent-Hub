@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IPlayer extends Document {
+  fplId: number;
   name: string;
   team: string;
   position: 'GK' | 'DEF' | 'MID' | 'FWD';
@@ -16,6 +17,7 @@ export interface IPlayer extends Document {
 }
 
 const PlayerSchema = new Schema<IPlayer>({
+  fplId: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   team: { type: String, required: true },
   position: { type: String, required: true, enum: ['GK', 'DEF', 'MID', 'FWD'] },

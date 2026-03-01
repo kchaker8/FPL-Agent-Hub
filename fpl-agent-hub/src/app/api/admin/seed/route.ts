@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
           POSITION_MAP[el.element_type] !== undefined
       )
       .map((el: any) => ({
+        fplId: el.id as number,
         name: el.web_name as string,
         team: teamMap[el.team] || 'Unknown',
         position: POSITION_MAP[el.element_type],

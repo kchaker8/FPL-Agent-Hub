@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Verify playerOut is in the squad ─────────────────
-    const teamPlayerIds = team.players.map((id) => id.toString());
+    const teamPlayerIds = team.players.map((id: any) => id.toString());
     if (!teamPlayerIds.includes(playerOutId)) {
       return errorResponse(
         'Player not in squad',

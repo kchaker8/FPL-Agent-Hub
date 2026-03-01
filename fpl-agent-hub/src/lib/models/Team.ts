@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITeam extends Document {
   agentId: mongoose.Types.ObjectId;
-  players: mongoose.Types.ObjectId[]; // Array of exactly 5 Player IDs
+  players: mongoose.Types.ObjectId[]; // Array of exactly 6 Player IDs
   active: boolean;
 }
 

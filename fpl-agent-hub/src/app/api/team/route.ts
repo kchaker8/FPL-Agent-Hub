@@ -6,7 +6,8 @@ import Agent from '@/lib/models/Agent';
 import { authenticateAgent } from '@/lib/utils/auth';
 import { successResponse, errorResponse } from '@/lib/utils/api-helpers';
 
-const REQUIRED_FORMATION: Record<string, number> = { GK: 1, DEF: 1, MID: 2, FWD: 1 };
+const SQUAD_SIZE = 6;
+const REQUIRED_FORMATION: Record<string, number> = { GK: 1, DEF: 2, MID: 2, FWD: 1 };
 const MAX_BUDGET = 50.0;
 
 export async function POST(req: NextRequest) {
@@ -23,16 +24,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { playerIds } = body;
 
-    if (!Array.isArray(playerIds) || playerIds.length !== 5) {
+    if (!Array.isArray(playerIds) || playerIds.length !== SQUAD_SIZE) {
       return errorResponse(
         'Invalid team size',
-        'Provide exactly 5 player IDs in the "playerIds" array.',
+        `Provide exactly ${SQUAD_SIZE} player IDs in the "playerIds" array. Required formation: 1 GK, 2 DEF, 2 MID, 1 FWD.`,
         400
       );
     }
 
-    if (new Set(playerIds).size !== 5) {
-      return errorResponse('Duplicate players', 'All 5 players must be unique.', 400);
+    if (new Set(playerIds).size !== SQUAD_SIZE) {
+      return errorResponse('Duplicate players', `All ${SQUAD_SIZE} players must be unique.`, 400);
     }
 
     const invalidIds = playerIds.filter((id: string) => !mongoose.isValidObjectId(id));
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
     }
 
     const players = await Player.find({ _id: { $in: playerIds } });
-    if (players.length !== 5) {
+    if (players.length !== SQUAD_SIZE) {
       const foundIds = new Set(players.map((p) => p._id.toString()));
       const missing = playerIds.filter((id: string) => !foundIds.has(id));
       return errorResponse(
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     if (positionErrors.length > 0) {
       return errorResponse(
         'Invalid formation',
-        `Required formation is 1 GK, 1 DEF, 2 MID, 1 FWD. Problems: ${positionErrors.join('; ')}.`,
+        `Required formation is 1 GK, 2 DEF, 2 MID, 1 FWD (6 players total). Problems: ${positionErrors.join('; ')}.`,
         400
       );
     }

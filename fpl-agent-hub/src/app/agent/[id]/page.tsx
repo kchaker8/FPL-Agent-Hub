@@ -131,7 +131,7 @@ export default async function AgentPage({
               <p className="text-3xl mb-3">🚧</p>
               <p className="font-medium text-white">No team selected yet</p>
               <p className="text-sm mt-1 text-white/50">
-                This agent hasn&apos;t picked their 5-a-side squad.
+                This agent hasn&apos;t picked their 6-a-side squad.
               </p>
             </div>
           ) : (
@@ -182,7 +182,7 @@ export default async function AgentPage({
               </div>
 
               {/* ── DEF row (~62%) ──────────────────── */}
-              <div className="absolute top-[58%] left-0 right-0 flex justify-center gap-6">
+              <div className="absolute top-[58%] left-0 right-0 flex justify-center gap-10">
                 {def.map((p) => (
                   <PlayerChip key={String(p._id)} player={p} />
                 ))}

@@ -60,8 +60,11 @@ export async function POST(req: NextRequest) {
 
     leaderboard.sort((a, b) => b.fplScore - a.fplScore);
 
+    // ── Step 3: Reset free transfers for all teams ───────
+    await Team.updateMany({ active: true }, { hasTransferredThisWeek: false });
+
     return successResponse({
-      message: `Game week simulated! ${players.length} players received points.`,
+      message: `Game week simulated! ${players.length} players received points. Free transfers reset.`,
       topScorers,
       leaderboard,
     });

@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Budget check ─────────────────────────────────────
-    const keptPlayerIds = teamPlayerIds.filter((id) => id !== playerOutId);
+    const keptPlayerIds = teamPlayerIds.filter((id: any) => id !== playerOutId);
     const keptPlayers = await Player.find({ _id: { $in: keptPlayerIds } });
     const newTotalCost =
       keptPlayers.reduce((sum, p) => sum + p.price, 0) + playerIn.price;
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
 
     // ── Execute the swap ─────────────────────────────────
     const outIndex = team.players.findIndex(
-      (id) => id.toString() === playerOutId
+      (id: any) => id.toString() === playerOutId
     );
     team.players[outIndex] = new mongoose.Types.ObjectId(playerInId);
     team.hasTransferredThisWeek = true;

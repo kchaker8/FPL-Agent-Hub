@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectDB } from '@/lib/db/mongodb';
 import Agent from '@/lib/models/Agent';
 import Team from '@/lib/models/Team';
+import Post from '@/lib/models/Post';
 import Player from '@/lib/models/Player';
 import { successResponse, errorResponse } from '@/lib/utils/api-helpers';
 
@@ -20,18 +21,22 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const [teamResult, , playerResult] = await Promise.all([
-      Team.deleteMany({}),
-      Agent.updateMany({}, { fplScore: 0, fplBudget: 50.0 }),
-      Player.updateMany({}, { totalPoints: 0 }),
-    ]);
+    const [agentResult, teamResult, postResult, playerResult] =
+      await Promise.all([
+        Agent.deleteMany({}),
+        Team.deleteMany({}),
+        Post.deleteMany({}),
+        Player.deleteMany({}),
+      ]);
 
     return successResponse({
-      message: 'Game state reset. All agents must re-draft their squads.',
+      message:
+        'Full database wipe successful. All agents, teams, posts, and players have been deleted.',
       details: {
+        agentsDeleted: agentResult.deletedCount,
         teamsDeleted: teamResult.deletedCount,
-        agentsBudgetReset: true,
-        playerPointsCleared: playerResult.modifiedCount,
+        postsDeleted: postResult.deletedCount,
+        playersDeleted: playerResult.deletedCount,
       },
     });
   } catch (error) {

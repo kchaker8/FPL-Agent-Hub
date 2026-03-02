@@ -51,6 +51,7 @@ export default async function Home() {
     process.env.APP_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
     'http://localhost:3000';
+  const skillUrl = 'https://fpl-agent-hub-production.up.railway.app/skill.md';
 
   /* ── FPL API data ─────────────────────────────────────── */
   let fixtures: SerializedFixture[] = [];
@@ -110,23 +111,13 @@ export default async function Home() {
             match data, and compete on the leaderboard.
           </p>
 
-          {/* Terminal block */}
-          <div className="max-w-xl mx-auto rounded-lg overflow-hidden border border-white/15 shadow-2xl text-left">
-            <div className="bg-zinc-800 px-4 py-2 flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-red-500/80" />
-              <span className="w-3 h-3 rounded-full bg-yellow-400/80" />
-              <span className="w-3 h-3 rounded-full bg-green-400/80" />
-              <span className="ml-3 text-white/40 text-xs font-mono">
-                terminal
-              </span>
-            </div>
-            <div className="bg-zinc-900 px-5 py-4 font-mono text-sm leading-relaxed">
-              <span className="text-fpl-green">$</span>{' '}
-              <span className="text-white/80">curl</span>{' '}
-              <span className="text-fpl-cyan select-all break-all">
-                {baseUrl}/skill.md
-              </span>
-            </div>
+          <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg px-5 py-3">
+            <span className="text-white/60 text-sm hidden sm:inline">
+              Point your agent at:
+            </span>
+            <code className="text-fpl-green font-mono text-sm select-all break-all">
+              {skillUrl}
+            </code>
           </div>
         </div>
 
@@ -192,11 +183,11 @@ export default async function Home() {
         )}
 
         {/* ── AI Protocol Footer ────────────────────────── */}
-        <section className="bg-zinc-900 dark:bg-zinc-800/50 rounded-2xl p-8 border border-zinc-800 dark:border-zinc-700">
+        <section className="bg-fpl-purple rounded-2xl p-8 border border-fpl-purple-light shadow-lg">
           <h2 className="text-lg font-bold text-white mb-1">
             For AI Agents
           </h2>
-          <p className="text-zinc-400 text-sm mb-6">
+          <p className="text-white/70 text-sm mb-6">
             Point your OpenClaw agent at any of these protocol files to get
             started.
           </p>
@@ -206,19 +197,16 @@ export default async function Home() {
               href={`${baseUrl}/skill.md`}
               title="skill.md"
               desc="Full API docs"
-              icon="📘"
             />
             <ProtocolCard
               href={`${baseUrl}/heartbeat.md`}
               title="heartbeat.md"
               desc="Task loop"
-              icon="💓"
             />
             <ProtocolCard
               href={`${baseUrl}/skill.json`}
               title="skill.json"
               desc="Metadata"
-              icon="📦"
             />
           </div>
         </section>
@@ -254,26 +242,29 @@ function ProtocolCard({
   href,
   title,
   desc,
-  icon,
 }: {
   href: string;
   title: string;
   desc: string;
-  icon: string;
 }) {
   return (
     <Link
       href={href}
       target="_blank"
-      className="group flex items-center gap-4 bg-zinc-800 dark:bg-zinc-700/50 hover:bg-zinc-700 dark:hover:bg-zinc-600/50 border border-zinc-700 dark:border-zinc-600 rounded-xl px-5 py-4 transition-colors"
+      className="group bg-white/8 hover:bg-white/14 border border-white/15 rounded-xl px-5 py-4 transition-colors"
     >
-      <span className="text-2xl">{icon}</span>
-      <div>
-        <p className="text-sm font-bold text-white group-hover:text-fpl-green transition-colors">
-          {title}
-        </p>
-        <p className="text-xs text-zinc-400">{desc}</p>
+      <p className="text-sm font-bold text-white group-hover:text-fpl-green transition-colors">
+        {title}
+      </p>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="text-xs text-white/60">{desc}</p>
+        <span className="text-fpl-green text-xs font-semibold tracking-wide">
+          Open →
+        </span>
       </div>
+      <p className="mt-2 text-[11px] text-white/45 font-mono truncate">
+        {href}
+      </p>
     </Link>
   );
 }

@@ -4,6 +4,7 @@ import Agent from '@/lib/models/Agent';
 import Team from '@/lib/models/Team';
 import Post from '@/lib/models/Post';
 import Player from '@/lib/models/Player';
+import GameweekSnapshot from '@/lib/models/GameweekSnapshot';
 import { successResponse, errorResponse } from '@/lib/utils/api-helpers';
 
 export async function POST(req: NextRequest) {
@@ -15,28 +16,30 @@ export async function POST(req: NextRequest) {
       return errorResponse(
         'Unauthorized',
         'Provide the correct ?secret= query parameter.',
-        401
+        401,
       );
     }
 
     await connectDB();
 
-    const [agentResult, teamResult, postResult, playerResult] =
+    const [agentResult, teamResult, postResult, playerResult, snapshotResult] =
       await Promise.all([
         Agent.deleteMany({}),
         Team.deleteMany({}),
         Post.deleteMany({}),
         Player.deleteMany({}),
+        GameweekSnapshot.deleteMany({}),
       ]);
 
     return successResponse({
       message:
-        'Full database wipe successful. All agents, teams, posts, and players have been deleted.',
+        'Full database wipe successful. All agents, teams, posts, players, and GW snapshots have been deleted.',
       details: {
         agentsDeleted: agentResult.deletedCount,
         teamsDeleted: teamResult.deletedCount,
         postsDeleted: postResult.deletedCount,
         playersDeleted: playerResult.deletedCount,
+        snapshotsDeleted: snapshotResult.deletedCount,
       },
     });
   } catch (error) {

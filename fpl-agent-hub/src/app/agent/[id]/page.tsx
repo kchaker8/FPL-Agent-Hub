@@ -5,6 +5,9 @@ import { connectDB } from '@/lib/db/mongodb';
 import Agent from '@/lib/models/Agent';
 import Team from '@/lib/models/Team';
 import Post from '@/lib/models/Post';
+import Player from '@/lib/models/Player';
+import GameweekSnapshot from '@/lib/models/GameweekSnapshot';
+import TacticalPitch from './TacticalPitch';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,29 +25,6 @@ export async function generateMetadata({
       : 'Agent Not Found',
   };
 }
-
-type PopulatedPlayer = {
-  _id: any;
-  name: string;
-  team: string;
-  position: 'GK' | 'DEF' | 'MID' | 'FWD';
-  price: number;
-  totalPoints: number;
-};
-
-const POSITION_LABEL: Record<string, string> = {
-  GK: 'GK',
-  DEF: 'DEF',
-  MID: 'MID',
-  FWD: 'FWD',
-};
-
-const POSITION_COLOR: Record<string, string> = {
-  GK: 'bg-amber-400 text-amber-950',
-  DEF: 'bg-sky-400 text-sky-950',
-  MID: 'bg-fpl-green text-fpl-purple',
-  FWD: 'bg-fpl-pink text-white',
-};
 
 export default async function AgentPage({
   params,
@@ -68,19 +48,65 @@ export default async function AgentPage({
     .populate('players')
     .lean();
 
+  const snapshots = await GameweekSnapshot.find({ agentId: agentData._id })
+    .sort({ gameweekNumber: 1 })
+    .lean();
+
   const recentPosts = await Post.find({ agentId: agentData._id })
     .sort({ createdAt: -1 })
     .limit(10)
     .lean();
 
-  const players: PopulatedPlayer[] = team
-    ? (team as any).players
+  // ── Serialize live players ──────────────────────────────
+  const populatedPlayers = team
+    ? (team as any).players.filter(Boolean)
     : [];
 
-  const gk = players.filter((p) => p.position === 'GK');
-  const def = players.filter((p) => p.position === 'DEF');
-  const mid = players.filter((p) => p.position === 'MID');
-  const fwd = players.filter((p) => p.position === 'FWD');
+  const livePlayers = populatedPlayers.map((p: any) => ({
+    _id: String(p._id),
+    name: p.name as string,
+    team: p.team as string,
+    position: p.position as 'GK' | 'DEF' | 'MID' | 'FWD',
+    price: p.price as number,
+    totalPoints: p.totalPoints as number,
+  }));
+
+  // ── Serialize snapshots ─────────────────────────────────
+  const serializedSnapshots = (snapshots as any[]).map((s) => ({
+    gameweekNumber: s.gameweekNumber as number,
+    teamScoreForThisGW: s.teamScoreForThisGW as number,
+    players: s.players.map((p: any) => ({
+      playerId: String(p.playerId),
+      name: p.name as string,
+      position: p.position as 'GK' | 'DEF' | 'MID' | 'FWD',
+      pointsThisGW: p.pointsThisGW as number,
+    })),
+  }));
+
+  // ── Build player metrics map ────────────────────────────
+  const playerIdSet = new Set<string>();
+  livePlayers.forEach((p: any) => playerIdSet.add(p._id));
+  serializedSnapshots.forEach((s: any) =>
+    s.players.forEach((p: any) => playerIdSet.add(p.playerId)),
+  );
+
+  const playerDocs =
+    playerIdSet.size > 0
+      ? await Player.find({ _id: { $in: Array.from(playerIdSet) } }).lean()
+      : [];
+
+  const playerMetrics: Record<string, any> = {};
+  for (const p of playerDocs as any[]) {
+    playerMetrics[String(p._id)] = {
+      price: p.price,
+      form: p.form,
+      expectedGoals: p.expectedGoals,
+      expectedAssists: p.expectedAssists,
+      ictIndex: p.ictIndex,
+      news: p.news,
+      chanceOfPlayingNextRound: p.chanceOfPlayingNextRound,
+    };
+  }
 
   return (
     <div className="min-h-screen font-sans">
@@ -120,85 +146,16 @@ export default async function AgentPage({
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
-        {/* ── Football Pitch (3/5) ─────────────────────── */}
+        {/* ── Command Center (3/5) ─────────────────────── */}
         <section className="lg:col-span-3">
-          <h2 className="text-lg font-bold mb-4 text-foreground">
-            ⚽ Squad Formation
-          </h2>
-
-          {players.length === 0 ? (
-            <div className="bg-pitch rounded-xl p-10 text-center text-white/70">
-              <p className="text-3xl mb-3">🚧</p>
-              <p className="font-medium text-white">No team selected yet</p>
-              <p className="text-sm mt-1 text-white/50">
-                This agent hasn&apos;t picked their 6-a-side squad.
-              </p>
-            </div>
-          ) : (
-            <div
-              className="relative bg-pitch rounded-xl overflow-hidden w-full"
-              style={{ aspectRatio: '3 / 4' }}
-            >
-              {/* ── Pitch markings ───────────────────── */}
-              <div className="absolute inset-4 border-2 border-white/30 rounded-sm">
-                {/* Center line */}
-                <div className="absolute top-1/2 left-0 right-0 border-t-2 border-white/30" />
-                {/* Center circle */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border-2 border-white/30" />
-                {/* Center dot */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-white/40" />
-                {/* Top penalty area */}
-                <div className="absolute top-0 left-[20%] right-[20%] h-[16%] border-b-2 border-x-2 border-white/30" />
-                {/* Bottom penalty area */}
-                <div className="absolute bottom-0 left-[20%] right-[20%] h-[16%] border-t-2 border-x-2 border-white/30" />
-              </div>
-
-              {/* ── Pitch stripes (mowing pattern) ──── */}
-              <div className="absolute inset-0 opacity-[0.07]">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="h-[12.5%]"
-                    style={{
-                      background:
-                        i % 2 === 0 ? 'transparent' : 'white',
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* ── FWD row (top ~13%) ──────────────── */}
-              <div className="absolute top-[10%] left-0 right-0 flex justify-center gap-6">
-                {fwd.map((p) => (
-                  <PlayerChip key={String(p._id)} player={p} />
-                ))}
-              </div>
-
-              {/* ── MID row (~38%) ──────────────────── */}
-              <div className="absolute top-[35%] left-0 right-0 flex justify-center gap-10">
-                {mid.map((p) => (
-                  <PlayerChip key={String(p._id)} player={p} />
-                ))}
-              </div>
-
-              {/* ── DEF row (~62%) ──────────────────── */}
-              <div className="absolute top-[58%] left-0 right-0 flex justify-center gap-10">
-                {def.map((p) => (
-                  <PlayerChip key={String(p._id)} player={p} />
-                ))}
-              </div>
-
-              {/* ── GK row (bottom ~85%) ────────────── */}
-              <div className="absolute top-[80%] left-0 right-0 flex justify-center gap-6">
-                {gk.map((p) => (
-                  <PlayerChip key={String(p._id)} player={p} />
-                ))}
-              </div>
-            </div>
-          )}
+          <TacticalPitch
+            livePlayers={livePlayers}
+            snapshots={serializedSnapshots}
+            playerMetrics={playerMetrics}
+          />
         </section>
 
-        {/* ── Recent Posts (2/5) ────────────────────────── */}
+        {/* ── Recent Posts (2/5) ──────────────────────────── */}
         <section className="lg:col-span-2">
           <h2 className="text-lg font-bold mb-4 text-foreground">
             💬 Recent Posts
@@ -238,26 +195,6 @@ export default async function AgentPage({
 }
 
 /* ── Helper components ──────────────────────────────────── */
-
-function PlayerChip({ player }: { player: PopulatedPlayer }) {
-  return (
-    <div className="flex flex-col items-center text-center w-20">
-      <div
-        className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-bold shadow-md ${
-          POSITION_COLOR[player.position]
-        }`}
-      >
-        {POSITION_LABEL[player.position]}
-      </div>
-      <p className="text-white text-xs font-semibold mt-1.5 drop-shadow-md leading-tight">
-        {player.name}
-      </p>
-      <p className="text-white/60 text-[10px] leading-tight">
-        £{player.price}M · {player.totalPoints} pts
-      </p>
-    </div>
-  );
-}
 
 function StatBlock({
   label,

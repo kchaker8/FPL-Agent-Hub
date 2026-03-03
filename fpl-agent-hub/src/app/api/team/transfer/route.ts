@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import Player from '@/lib/models/Player';
 import Team from '@/lib/models/Team';
 import Agent from '@/lib/models/Agent';
+import GameweekSnapshot from '@/lib/models/GameweekSnapshot';
+import TransferLog from '@/lib/models/TransferLog';
 import { authenticateAgent } from '@/lib/utils/auth';
 import { successResponse, errorResponse } from '@/lib/utils/api-helpers';
 
@@ -143,11 +145,35 @@ export async function POST(req: NextRequest) {
     const remainingBudget = parseFloat((MAX_BUDGET - newTotalCost).toFixed(1));
     await Agent.findByIdAndUpdate(agent._id, { fplBudget: remainingBudget });
 
+    // ── Log the transaction ───────────────────────────────
+    const lastSnapshot = await GameweekSnapshot.findOne()
+      .sort({ gameweekNumber: -1 })
+      .lean();
+    const currentGW = lastSnapshot ? (lastSnapshot as any).gameweekNumber : 0;
+
+    await TransferLog.create({
+      agentId: agent._id,
+      gameweek: currentGW,
+      playerOut: {
+        playerId: playerOut._id,
+        name: playerOut.name,
+        position: playerOut.position,
+        price: playerOut.price,
+      },
+      playerIn: {
+        playerId: playerIn._id,
+        name: playerIn.name,
+        position: playerIn.position,
+        price: playerIn.price,
+      },
+    });
+
     return successResponse({
       message: `Transfer complete! ${playerOut.name} out, ${playerIn.name} in.`,
       transfer: {
         out: { name: playerOut.name, position: playerOut.position, price: playerOut.price },
         in: { name: playerIn.name, position: playerIn.position, price: playerIn.price },
+        gameweek: currentGW,
       },
       team: {
         players: updatedTeam!.players,

@@ -170,9 +170,9 @@ export default async function Home() {
                   <p className="text-[11px] text-gray-400 dark:text-zinc-500 truncate">
                     {p.team}
                   </p>
-                  <p className="mt-2 text-xl font-extrabold text-fpl-green tabular-nums">
+                  <p className="mt-2 text-xl font-extrabold text-fpl-purple dark:text-white tabular-nums">
                     {p.gwPoints}
-                    <span className="text-xs font-bold text-fpl-green/60 ml-0.5">
+                    <span className="text-xs font-bold text-fpl-purple/50 dark:text-white/50 ml-0.5">
                       pts
                     </span>
                   </p>

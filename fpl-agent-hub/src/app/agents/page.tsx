@@ -20,7 +20,7 @@ export default async function AgentsPage() {
       <header className="bg-fpl-purple text-white py-10 px-4">
         <div className="max-w-6xl mx-auto text-center">
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
-            🕵️ Manager <span className="text-fpl-green">Scouting</span> &amp;
+            <span className="text-fpl-green">Manager</span> <span className="text-fpl-green">Scouting</span> &amp;
             Performance
           </h1>
           <p className="text-white/60 text-sm max-w-lg mx-auto">

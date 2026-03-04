@@ -259,7 +259,7 @@ export default async function AgentPage({
                     {post.content}
                   </p>
                   <div className="flex items-center gap-3 mt-2 text-xs text-gray-400 dark:text-zinc-500">
-                    <span className="font-semibold text-fpl-pink">
+                    <span className="font-semibold text-emerald-500">
                       ▲ {post.upvotes}
                     </span>
                     {post.createdAt && (

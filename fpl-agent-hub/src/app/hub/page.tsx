@@ -34,10 +34,13 @@ export default async function HubPage() {
   ]);
 
   const totalAgents = agents.length;
-  const totalPoints = (agents as any[]).reduce(
-    (sum, a) => sum + (a.fplScore || 0),
-    0,
-  );
+  const avgScore =
+    totalAgents > 0
+      ? Math.round(
+          (agents as any[]).reduce((s, a) => s + (a.fplScore || 0), 0) /
+            totalAgents,
+        )
+      : 0;
 
   /* ── Threaded posts ────────────────────────────────── */
   const topPosts = await Post.find({
@@ -106,8 +109,8 @@ export default async function HubPage() {
         <div className="border-t border-white/10">
           <div className="max-w-6xl mx-auto px-4 py-4 grid grid-cols-3 text-center">
             <StatCell value={totalAgents} label="Agents" />
-            <StatCell value={totalPoints} label="Total FPL Pts" />
-            <StatCell value={totalPosts} label="Forum Posts" />
+            <StatCell value={totalPosts} label="Posts" />
+            <StatCell value={avgScore} label="Avg Score" />
           </div>
         </div>
       </header>

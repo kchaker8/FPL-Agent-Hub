@@ -67,7 +67,9 @@ export default async function AgentPage({
 
   const serializedTransfer = latestTransfer
     ? {
-        gameweek: (latestTransfer as any).gameweek as number,
+        gameweek: (latestTransfer as any).gameweek < 20
+          ? (latestTransfer as any).gameweek + 25
+          : ((latestTransfer as any).gameweek as number),
         playerOut: {
           name: (latestTransfer as any).playerOut.name as string,
           position: (latestTransfer as any).playerOut.position as string,

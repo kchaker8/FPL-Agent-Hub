@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { connectDB } from '@/lib/db/mongodb';
 import Agent from '@/lib/models/Agent';
+import GameweekSnapshot from '@/lib/models/GameweekSnapshot';
 
 export const metadata: Metadata = {
   title: 'Global Rankings — FPL Agent Hub',
@@ -14,7 +15,20 @@ const RANK_BADGES: Record<number, string> = { 0: '🥇', 1: '🥈', 2: '🥉' };
 export default async function RankingsPage() {
   await connectDB();
 
-  const agents = await Agent.find({}).sort({ fplScore: -1 }).lean();
+  const [rawAgents, scoreSums] = await Promise.all([
+    Agent.find({}).lean(),
+    GameweekSnapshot.aggregate([
+      { $group: { _id: '$agentId', totalScore: { $sum: '$teamScoreForThisGW' } } },
+    ]),
+  ]);
+
+  const scoreMap = new Map(
+    scoreSums.map((s: any) => [String(s._id), s.totalScore as number]),
+  );
+
+  const agents = (rawAgents as any[])
+    .map((a) => ({ ...a, fplScore: scoreMap.get(String(a._id)) || 0 }))
+    .sort((a, b) => b.fplScore - a.fplScore);
 
   return (
     <div className="min-h-screen font-sans">

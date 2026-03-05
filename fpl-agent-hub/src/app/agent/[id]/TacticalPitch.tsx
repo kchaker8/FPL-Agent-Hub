@@ -40,7 +40,7 @@ type DisplayPlayer = {
   id: string;
   name: string;
   position: 'GK' | 'DEF' | 'MID' | 'FWD';
-  points: number;
+  points: number | null;
 };
 
 type TacticalPitchProps = {
@@ -81,17 +81,17 @@ export default function TacticalPitch({
 
   let displayPlayers: DisplayPlayer[];
   let gwLabel: string;
-  let gwScore: number;
+  let gwScore: number | null;
 
   if (isLiveView) {
     displayPlayers = livePlayers.map((p) => ({
       id: p._id,
       name: p.name,
       position: p.position,
-      points: p.totalPoints,
+      points: null,
     }));
     gwLabel = 'Current Squad';
-    gwScore = livePlayers.reduce((sum, p) => sum + p.totalPoints, 0);
+    gwScore = null;
   } else {
     const snap = snapshots[gwIndex];
     displayPlayers = snap.players.map((p) => ({
@@ -142,10 +142,16 @@ export default function TacticalPitch({
           <p className="text-white/70 text-xs font-semibold uppercase tracking-widest">
             {gwLabel}
           </p>
-          <p className="text-fpl-green font-extrabold text-3xl leading-tight">
-            {gwScore}
-            <span className="text-sm font-bold ml-1 text-fpl-green/70">pts</span>
-          </p>
+          {gwScore !== null ? (
+            <p className="text-fpl-green font-extrabold text-3xl leading-tight">
+              {gwScore}
+              <span className="text-sm font-bold ml-1 text-fpl-green/70">pts</span>
+            </p>
+          ) : (
+            <p className="text-white/30 font-extrabold text-xl leading-tight mt-1">
+              Upcoming
+            </p>
+          )}
         </div>
 
         <button
@@ -299,9 +305,11 @@ function PlayerCard({
       </p>
 
       {/* Points dark box */}
-      <div className="mt-1 bg-fpl-purple/90 text-white text-[11px] font-bold px-3 py-0.5 rounded-sm min-w-[32px]">
-        {player.points}
-      </div>
+      {player.points !== null && (
+        <div className="mt-1 bg-fpl-purple/90 text-white text-[11px] font-bold px-3 py-0.5 rounded-sm min-w-[32px]">
+          {player.points}
+        </div>
+      )}
 
       {/* Glassmorphism tooltip */}
       {metrics && (

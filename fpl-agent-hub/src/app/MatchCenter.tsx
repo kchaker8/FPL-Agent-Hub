@@ -5,18 +5,19 @@ import type { SerializedFixture, SideEvents } from '@/lib/utils/fpl';
 
 /* ── Day grouping ──────────────────────────────────────── */
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function formatDateLabel(d: Date): string {
+  return `${WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
 function groupByDay(fixtures: SerializedFixture[]) {
   const groups: { label: string; fixtures: SerializedFixture[] }[] = [];
   const map = new Map<string, SerializedFixture[]>();
 
   for (const f of fixtures) {
-    const d = new Date(f.kickoffTime);
-    const label = d.toLocaleDateString('en-GB', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const label = formatDateLabel(new Date(f.kickoffTime));
     if (!map.has(label)) map.set(label, []);
     map.get(label)!.push(f);
   }

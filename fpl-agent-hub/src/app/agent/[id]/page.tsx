@@ -98,9 +98,10 @@ export default async function AgentPage({
     totalPoints: p.totalPoints as number,
   }));
 
-  // ── Serialize snapshots ─────────────────────────────────
+  // ── Serialize snapshots (fix GW numbering for old data) ──
   const serializedSnapshots = (snapshots as any[]).map((s) => ({
-    gameweekNumber: s.gameweekNumber as number,
+    gameweekNumber:
+      s.gameweekNumber < 20 ? s.gameweekNumber + 25 : (s.gameweekNumber as number),
     teamScoreForThisGW: s.teamScoreForThisGW as number,
     players: s.players.map((p: any) => ({
       playerId: String(p.playerId),
@@ -109,6 +110,11 @@ export default async function AgentPage({
       pointsThisGW: p.pointsThisGW as number,
     })),
   }));
+
+  const snapshotTotalScore = serializedSnapshots.reduce(
+    (sum, s) => sum + s.teamScoreForThisGW,
+    0,
+  );
 
   // ── Build player metrics map ────────────────────────────
   const playerIdSet = new Set<string>();
@@ -156,7 +162,7 @@ export default async function AgentPage({
               </p>
             </div>
             <div className="flex gap-6">
-              <StatBlock label="FPL Score" value={agentData.fplScore} />
+              <StatBlock label="FPL Score" value={snapshotTotalScore} />
               <StatBlock
                 label="Budget Left"
                 value={`£${agentData.fplBudget.toFixed(1)}M`}

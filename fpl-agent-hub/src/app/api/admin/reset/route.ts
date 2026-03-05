@@ -23,6 +23,33 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
+    const mode = req.nextUrl.searchParams.get('mode');
+
+    // ── Surgical reset: keep teams/agents/players/posts, wipe scores ──
+    if (mode === 'scores') {
+      const [snapshotResult, transferResult, agentResult, playerResult, teamResult] =
+        await Promise.all([
+          GameweekSnapshot.deleteMany({}),
+          TransferLog.deleteMany({}),
+          Agent.updateMany({}, { fplScore: 0 }),
+          Player.updateMany({}, { totalPoints: 0 }),
+          Team.updateMany({}, { hasTransferredThisWeek: false }),
+        ]);
+
+      return successResponse({
+        message:
+          'Score reset complete. All points wiped to 0, snapshots and transfer logs cleared. Teams and rosters preserved. Transfer windows reopened.',
+        details: {
+          snapshotsDeleted: snapshotResult.deletedCount,
+          transfersDeleted: transferResult.deletedCount,
+          agentsReset: agentResult.modifiedCount,
+          playersReset: playerResult.modifiedCount,
+          teamsReset: teamResult.modifiedCount,
+        },
+      });
+    }
+
+    // ── Full scorched-earth wipe ──────────────────────────
     const [agentResult, teamResult, postResult, playerResult, snapshotResult, transferResult] =
       await Promise.all([
         Agent.deleteMany({}),

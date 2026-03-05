@@ -73,18 +73,22 @@ export async function POST(req: NextRequest) {
       await Player.bulkWrite(bulkOps);
     }
 
-    // ── Determine next GW number ────────────────────────
-    const lastSnapshot = await GameweekSnapshot.findOne()
-      .sort({ gameweekNumber: -1 })
-      .lean();
-    const nextGW = lastSnapshot
-      ? (lastSnapshot as any).gameweekNumber + 1
-      : 1;
+    // ── Determine GW number ─────────────────────────────
+    let snapshotGW: number;
+    if (gw) {
+      snapshotGW = parseInt(gw, 10);
+    } else {
+      const lastSnapshot = await GameweekSnapshot.findOne()
+        .sort({ gameweekNumber: -1 })
+        .lean();
+      snapshotGW = lastSnapshot
+        ? (lastSnapshot as any).gameweekNumber + 1
+        : 1;
+    }
 
-    // ── Create snapshots & recalculate agent scores ─────
+    // ── Create snapshots ─────────────────────────────────
     const teams = await Team.find({ active: true }).populate('players');
     const snapshotDocs: any[] = [];
-    const leaderboard: { agent: string; fplScore: number }[] = [];
 
     for (const team of teams) {
       const populatedPlayers = (team.players as any[]).filter(Boolean);
@@ -103,29 +107,35 @@ export async function POST(req: NextRequest) {
 
       snapshotDocs.push({
         agentId: team.agentId,
-        gameweekNumber: nextGW,
+        gameweekNumber: snapshotGW,
         teamScoreForThisGW: teamGWScore,
         players: snapshotPlayers,
       });
-
-      const cumulativeScore = populatedPlayers.reduce(
-        (sum: number, p: any) => sum + p.totalPoints,
-        0,
-      );
-
-      const agent = await Agent.findByIdAndUpdate(
-        team.agentId,
-        { fplScore: cumulativeScore },
-        { new: true },
-      );
-
-      if (agent) {
-        leaderboard.push({ agent: agent.name, fplScore: cumulativeScore });
-      }
     }
 
     if (snapshotDocs.length > 0) {
       await GameweekSnapshot.insertMany(snapshotDocs);
+    }
+
+    // ── Recalculate agent scores from snapshot history ───
+    const scoreSums = await GameweekSnapshot.aggregate([
+      { $group: { _id: '$agentId', totalScore: { $sum: '$teamScoreForThisGW' } } },
+    ]);
+    const scoreMap = new Map(
+      scoreSums.map((s: any) => [String(s._id), s.totalScore as number]),
+    );
+
+    const leaderboard: { agent: string; fplScore: number }[] = [];
+    for (const team of teams) {
+      const correctScore = scoreMap.get(String(team.agentId)) || 0;
+      const agent = await Agent.findByIdAndUpdate(
+        team.agentId,
+        { fplScore: correctScore },
+        { new: true },
+      );
+      if (agent) {
+        leaderboard.push({ agent: agent.name, fplScore: correctScore });
+      }
     }
 
     leaderboard.sort((a, b) => b.fplScore - a.fplScore);
@@ -145,8 +155,8 @@ export async function POST(req: NextRequest) {
     await Team.updateMany({ active: true }, { hasTransferredThisWeek: false });
 
     return successResponse({
-      message: `Game week ${nextGW} simulated (${mode})! ${Object.keys(gwPointsMap).length} players received points. Free transfers reset.`,
-      gameweek: nextGW,
+      message: `Game week ${snapshotGW} simulated (${mode})! ${Object.keys(gwPointsMap).length} players received points. Free transfers reset.`,
+      gameweek: snapshotGW,
       topScorers,
       leaderboard,
     });

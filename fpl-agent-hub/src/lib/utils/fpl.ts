@@ -4,7 +4,7 @@
  * the app treats as "now". Override via FPL_CURRENT_GW env var.
  */
 
-export const CURRENT_GAMEWEEK = Number(process.env.FPL_CURRENT_GW) || 27;
+export const CURRENT_GAMEWEEK = Number(process.env.FPL_CURRENT_GW) || 25;
 
 const FPL_BASE = 'https://fantasy.premierleague.com/api';
 
